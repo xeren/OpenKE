@@ -22,6 +22,10 @@ def _term(h, t, l):
 
 
 class DistMult(ModelClass):
+	'''
+Implements models as described by Yang et.al. 2015. (https://arxiv.org/pdf/1412.6575.pdf).
+
+	'''
 
 
 	def _score(self, h, t, l):
@@ -46,16 +50,21 @@ class DistMult(ModelClass):
 
 
 	def _loss_def(self):
-		'''Initializes the loss function.'''
+		'''
+Initializes the loss function.
 
-		h, t, l = _lookup(*self._all_instance()) # [bp+bn,d]
-		y = self._all_labels() # [bp+bn]
+The DistMult model class defines the loss function
+		'''
 
-		s = self._norm(_term(h, t, l)) # [bp+bn]
-		loss = mean(softplus(y * s)) # []
-		reg = mean(h ** 2) + mean(t ** 2) + mean(l ** 2) # []
+		from tensorflow import expand_dims
 
-		return loss + self.weight * reg # []
+		h, t, l = _lookup(*self._all_instance()) # [b*n,d]
+		y = expand_dims(self._all_labels(), -1) # [b*n,1]
+
+		loss = sum(softplus(-y * _term(h, t, l))) # []
+		regularization = mean(h ** 2) + mean(t ** 2) + mean(l ** 2) # []
+
+		return loss + self.weight * regularization # []
 
 
 	def _predict_def(self):

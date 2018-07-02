@@ -11,19 +11,16 @@ with open("./benchmarks/FB15K/relation2id.txt") as f:
 base = Dataset("./benchmarks/FB15K/train2id.txt", E, R)
 
 #   Set the knowledge embedding model class.
-from tensorflow.python.training.gradient_descent import GradientDescentOptimizer as optimizer
-model = lambda: Model(50, 10, 1., base.shape, batchshape=(len(base) // 20, 2),
-		optimizer=optimizer(.0001))
+from tensorflow import GradientDescentOptimizer
+folds, negatives = 20, (1,0)
+model = lambda: Model(50, 10, 1., base.shape,
+	batchshape=(len(base)//folds, 1+sum(negatives)),
+	optimizer=train.GradientDescentOptimizer(.0001))
 
 #   Train the model.
-def ee(epoch, loss):
-	from math import isnan
-	if isnan(loss):
-		raise TypeError(loss)
-	print(epoch, loss)
-model, record = base.train(model, folds=20, epochs=20,
-	batchkwargs={'negatives':(1,0), 'bern':False, 'workers':4},
-	eachepoch=ee, prefix="./result")
+model, record = base.train(model, folds=folds, epochs=20,
+	batchkwargs={'negatives':negatives, 'bern':False, 'workers':4},
+	eachepoch=print, prefix="./result.transr")
 print(record)
 
 #   Input testing files from benchmarks/FB15K/.
